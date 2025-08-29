@@ -3,6 +3,7 @@
     "docs": "cd docs && bun start",
     "dev": "cd frontend && deno task dev",
     "docker:build": "cd frontend && docker build . -t fresh-app",
-    "docker:run": "docker run -p 8080:80 fresh-app"
+    "docker:run": "docker run -p 8080:80 fresh-app",
+    "image:latest": "deno run --allow-net --allow-env=TAG_PREFIX,PLATFORM_OS,PLATFORM_ARCH scripts/get_latest_image.ts"
   }
 }
