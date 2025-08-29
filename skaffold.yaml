@@ -3,6 +3,23 @@ kind: Config
 metadata:
   name: deno-fresh-template
 
+build:
+  artifacts:
+    - image: ghcr.io/wcygan/deno-fresh-template/frontend
+      context: frontend
+      docker:
+        dockerfile: Dockerfile
+  local:
+    push: false
+    tryImportMissing: true
+    useDockerCLI: true
+
+profiles:
+  - name: remote-push
+    build:
+      local:
+        push: true
+
 manifests:
   rawYaml:
     - k8s/namespace.yaml
