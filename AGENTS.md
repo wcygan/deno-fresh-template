@@ -200,22 +200,97 @@ export default define.page<typeof handler>((props) => (
 
 ## Testing strategy (Deno test)
 
-* Prefer request/response tests over component snapshots.
-* Use `app.handler()` to obtain a function that accepts a `Request` and returns a `Response`.
+- Prefer integration-style request/response tests over DOM-heavy component tests.
+- Export `app` from `main.ts`; only call `app.listen()` in the runtime entry (e.g., `dev.ts`). Tests call `app.handler()` directly.
+- Co-locate small unit tests near code and keep higher-level tests in a `tests/` folder.
+
+**Layout & discovery**
+
+- Co-located unit tests: `components/Button_test.tsx`, `islands/Counter_test.tsx` (logic-only), `utils/format_test.ts`.
+- Integration tests: `tests/app_test.ts`, `tests/routes_test.ts`, `tests/middleware_test.ts`.
+- Naming: `*_test.ts` / `*_test.tsx` (auto-discovered recursively). Benchmarks: `*_bench.ts`.
+- Snapshots live alongside tests under `__snapshots__/` (managed by `@std/testing/snapshot`).
+
+**Integration tests (preferred)**
 
 ```ts
-// app_test.ts (integration-style)
+// tests/app_test.ts
 import { app } from "./main.ts";
+import { assertEquals, assert } from "jsr:@std/assert";
+
 Deno.test("/health returns ok", async () => {
   const res = await app.handler()(new Request("http://x/health"));
-  const body = await res.text();
-  if (res.status !== 200 || body !== "ok") throw new Error("bad response");
+  assertEquals(res.status, 200);
+  assertEquals(await res.text(), "ok");
+});
+
+Deno.test("index renders HTML", async () => {
+  const res = await app.handler()(new Request("http://x/"));
+  assertEquals(res.headers.get("content-type")?.includes("text/html"), true);
+  const html = await res.text();
+  assert(html.includes("<h1") || html.includes("<main"));
 });
 ```
 
 **Middleware tests**
 
-* Prefer focused tests that assert headers/state propagation by wrapping `ctx.next()`.
+- Assert headers/status/redirects around `await ctx.next()` using request/response tests or folder `_middleware.ts` routes.
+
+**Unit tests (when valuable)**
+
+- Pure helpers (formatters/validators) and small island logic (signals/reducers) that don’t require a browser DOM.
+- Prefer testing island logic as functions or via signals, guarded behind `IS_BROWSER` where necessary.
+
+**Mocks, stubs, spies**
+
+- Use `jsr:@std/testing/mock` utilities.
+```ts
+import { stub, spy } from "jsr:@std/testing/mock";
+
+Deno.test("fetch is called once", async () => {
+  using s = stub(globalThis, "fetch", () => Promise.resolve(new Response("ok")));
+  // call code that uses fetch()
+});
+```
+- Use `FakeTime` for time-dependent code; prefer `using` to auto-restore.
+
+**Snapshots (sparingly)**
+
+- Use for small, stable HTML/string fragments. Avoid brittle full-page snapshots.
+```ts
+import { assertSnapshot } from "jsr:@std/testing/snapshot";
+Deno.test("hero fragment", async (t) => {
+  const html = "<section>Hero</section>";
+  await assertSnapshot(t, html);
+});
+// Update snapshots: deno test --allow-read --allow-write -- --update
+```
+
+**Permissions & speed**
+
+- Start with zero permissions; add narrowly as needed:
+  - Snapshots: `--allow-read --allow-write` (to manage snapshot files).
+  - If tests perform network/file I/O, scope flags: `--allow-net=localhost` or `--allow-read=./static`.
+- Keep tests fast and deterministic; stub external calls and use `FakeTime`.
+
+**Coverage**
+
+- Typical flow:
+  - `deno test --coverage=.cov`
+  - `deno coverage .cov --lcov > coverage.lcov`
+- Integrate into CI for trends; prioritize meaningful paths rather than 100% coverage.
+
+**Recommended tasks (example)**
+
+- `test`: `deno test`
+- `test:watch`: `deno test --watch`
+- `coverage`: `deno test --coverage=.cov && deno coverage .cov --lcov > coverage.lcov`
+- `check`: `deno fmt --check && deno lint && deno check`
+
+**Browser/E2E (optional)**
+
+- If needed, keep slow browser-level tests in a separate `e2e/` folder and run sparingly.
+- Follow Deno’s Web Testing (WebDriver BiDi) guidance; do not replace integration tests with E2E.
 
 ---
 
