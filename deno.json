@@ -9,6 +9,9 @@
     "k8s:delete": "skaffold delete",
     "k8s:forward": "kubectl -n app port-forward svc/fresh-app 8080:80",
     "image:latest": "deno run --allow-net --allow-env=TAG_PREFIX,PLATFORM_OS,PLATFORM_ARCH scripts/get_latest_image.ts",
-    "cluster:sync-check": "deno run --allow-run --allow-read --allow-net scripts/check_cluster_sync.ts"
+    "cluster:sync-check": "deno run --allow-run --allow-read --allow-net scripts/check_cluster_sync.ts",
+    "test": "cd frontend && deno test --allow-env",
+    "test:watch": "cd frontend && deno test --allow-env --watch",
+    "coverage": "cd frontend && deno test --allow-env --coverage=.cov && deno coverage .cov --lcov > coverage.lcov"
   }
 }
