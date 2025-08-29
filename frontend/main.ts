@@ -134,7 +134,7 @@ app.use(
 );
 
 // Example programmatic route used in tests (with metrics observation)
-app.get("/api2/:name", async (ctx) => {
+app.get("/api2/:name", (ctx) => {
   const t0 = performance.now();
   const name = ctx.params.name;
   const res = new Response(
