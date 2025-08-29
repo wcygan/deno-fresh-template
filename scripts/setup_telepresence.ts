@@ -32,11 +32,18 @@ const TP_VERSION = getEnv("TELEPRESENCE_VERSION") ?? "v2.24.0"; // pin exact
 const TP_MANAGER_NS = parseArg("--manager-namespace") ?? "ambassador";
 const DO_CONNECT = hasFlag("--connect");
 const DO_INTERCEPT = hasFlag("--intercept");
+const DO_LEAVE = hasFlag("--leave");
+const DO_QUIT = hasFlag("--quit");
+const DO_STATUS = hasFlag("--status");
 const INTERCEPT_SERVICE = parseArg("--service") ?? "fresh-app";
+const LEAVE_NAME = parseArg("--name") ?? INTERCEPT_SERVICE;
 const INTERCEPT_NS = parseArg("--service-namespace") ?? "app";
 const INTERCEPT_PORT = parseArg("--port") ?? "8000"; // local service port
+// Note: Telepresence v2.24.0 does not support --preview-url or --http-header on
+// the intercept command. We keep these parser hooks for compatibility but ignore
+// them to avoid CLI errors.
 const PREVIEW_URL = hasFlag("--preview-url");
-const HTTP_HEADER = parseArg("--http-header"); // e.g., x-user=me
+const HTTP_HEADER = parseArg("--http-header"); // e.g., x-user=me (ignored)
 
 function hasFlag(name: string): boolean {
   return Deno.args.includes(name);
@@ -146,6 +153,30 @@ async function ensureNamespace(ns: string) {
   }
 }
 
+async function getCurrentNamespace(): Promise<string | undefined> {
+  const { code, stdout } = await runCapture([
+    "kubectl",
+    "config",
+    "view",
+    "--minify",
+    "--output",
+    "jsonpath={..namespace}",
+  ]);
+  if (code !== 0) return undefined;
+  return stdout || undefined;
+}
+
+async function setCurrentNamespace(ns: string): Promise<boolean> {
+  const { code } = await runCapture([
+    "kubectl",
+    "config",
+    "set-context",
+    "--current",
+    `--namespace=${ns}`,
+  ]);
+  return code === 0;
+}
+
 async function getTrafficManagerStatus(ns: string): Promise<{ installed: boolean; ready: boolean; availableReplicas: number }> {
   const res = await runCapture([
     "kubectl",
@@ -186,29 +217,53 @@ async function waitForTrafficManager(ns: string, timeoutMs = 120_000): Promise<b
   return false;
 }
 
-async function connect(tpPath: string): Promise<{ connected: boolean; message?: string }> {
-  const { code, stdout, stderr } = await runCapture([tpPath, "connect", "--timeout", "60s"]);
+async function connect(tpPath: string, ns?: string): Promise<{ connected: boolean; message?: string }> {
+  const args = [tpPath, "connect"];
+  if (ns) {
+    args.push("--namespace", ns);
+  }
+  const { code, stdout, stderr } = await runCapture(args);
   const ok = code === 0;
   return { connected: ok, message: ok ? stdout : stderr || stdout };
 }
 
+async function tpQuit(tpPath: string): Promise<void> {
+  await runCapture([tpPath, "quit"]);
+}
+
+async function tpLeave(tpPath: string, name?: string): Promise<{ ok: boolean; message?: string }> {
+  const args = [tpPath, "leave"];
+  if (name) args.push(name);
+  const { code, stdout, stderr } = await runCapture(args);
+  const ok = code === 0 || /not found|no such intercept/i.test(stderr + stdout);
+  return { ok, message: ok ? stdout : stderr || stdout };
+}
+
+async function tpStatus(tpPath: string): Promise<{ ok: boolean; json?: Json; raw?: string }> {
+  const { code, stdout, stderr } = await runCapture([tpPath, "status", "--output=json"]);
+  if (code !== 0) return { ok: false, raw: stderr || stdout };
+  try {
+    const obj = JSON.parse(stdout) as Json;
+    return { ok: true, json: obj };
+  } catch {
+    return { ok: false, raw: stdout };
+  }
+}
+
 async function intercept(tpPath: string): Promise<{ intercepted: boolean; message?: string }> {
+  // Telepresence v2.24.0 uses the current kubectl context namespace.
   const args = [
     tpPath,
     "intercept",
     INTERCEPT_SERVICE,
-    "--namespace",
-    INTERCEPT_NS,
     "--port",
     `${INTERCEPT_PORT}:http`,
   ];
-  if (PREVIEW_URL) args.push("--preview-url=true");
-  if (HTTP_HEADER) {
-    args.push("--http-header", HTTP_HEADER);
-  }
+  // Ignore PREVIEW_URL/HTTP_HEADER; not supported by this TP version.
   const { code, stdout, stderr } = await runCapture(args);
   const ok = code === 0 || /already exists|already intercepted/i.test(stderr + stdout);
-  return { intercepted: ok, message: ok ? stdout : stderr || stdout };
+  const msg = (PREVIEW_URL ? "(preview-url ignored)\n" : "") + (stderr || stdout);
+  return { intercepted: ok, message: ok ? stdout : msg };
 }
 
 async function main() {
@@ -229,11 +284,37 @@ async function main() {
   }
 
   let connected: boolean | undefined;
+  let connectRes: { connected: boolean; message?: string } | undefined;
   let interceptRes: { intercepted: boolean; message?: string } | undefined;
+  let leaveRes: { ok: boolean; message?: string } | undefined;
+  let statusRes: { ok: boolean; json?: Json; raw?: string } | undefined;
 
-  if (DO_CONNECT) {
-    const res = await connect(client.path);
-    connected = res.connected;
+  if (DO_LEAVE) {
+    // Leave does not require connection, but the daemon must be reachable.
+    leaveRes = await tpLeave(client.path, LEAVE_NAME);
+    actions.push(leaveRes.ok ? `left ${LEAVE_NAME}` : `leave failed (${LEAVE_NAME})`);
+  }
+
+  if (DO_QUIT) {
+    await tpQuit(client.path);
+    actions.push("quit");
+  }
+
+  if (DO_STATUS) {
+    statusRes = await tpStatus(client.path);
+    actions.push(statusRes.ok ? "status" : "status failed");
+  }
+
+  if (DO_CONNECT || DO_INTERCEPT) {
+    // Ensure target namespace exists; connect will scope to it.
+    if (DO_INTERCEPT) await ensureNamespace(INTERCEPT_NS);
+    connectRes = await connect(client.path, DO_INTERCEPT ? INTERCEPT_NS : undefined);
+    connected = connectRes.connected;
+    if (!connected && /Cluster configuration changed/i.test(connectRes.message ?? "")) {
+      await tpQuit(client.path);
+      connectRes = await connect(client.path, DO_INTERCEPT ? INTERCEPT_NS : undefined);
+      connected = connectRes.connected;
+    }
     actions.push(connected ? "connected" : "connect failed");
     if (DO_INTERCEPT && connected) {
       interceptRes = await intercept(client.path);
@@ -253,7 +334,7 @@ async function main() {
       installed: installed || ready,
       ready,
     },
-    connect: DO_CONNECT ? { attempted: true, connected: connected ?? false } : { attempted: false },
+    connect: DO_CONNECT ? { attempted: true, connected: connected ?? false, message: connectRes?.message ?? null } : { attempted: false },
     intercept: DO_INTERCEPT ? {
       attempted: true,
       service: INTERCEPT_SERVICE,
@@ -261,6 +342,13 @@ async function main() {
       port: INTERCEPT_PORT,
       result: interceptRes ?? null,
     } : { attempted: false },
+    leave: DO_LEAVE ? {
+      attempted: true,
+      name: LEAVE_NAME,
+      result: leaveRes ?? null,
+    } : { attempted: false },
+    quit: DO_QUIT ? { attempted: true } : { attempted: false },
+    status: DO_STATUS ? { attempted: true, result: statusRes ?? null } : { attempted: false },
     actions,
   } satisfies Json;
 
