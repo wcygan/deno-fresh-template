@@ -1,15 +1,17 @@
 import { assert, assertEquals } from "jsr:@std/assert";
 import { middlewares } from "../middleware/index.ts";
+import { type Context } from "fresh";
+import { type State } from "../utils.ts";
 
 Deno.test("cors preflight returns 204 with allow headers", async () => {
   const mw = middlewares.cors({
     origins: ["https://ex.com"],
     headers: ["Content-Type"],
   });
-  const ctx: any = {
+  const ctx = {
     req: new Request("http://x/foo", { method: "OPTIONS" }),
     next: () => new Response("should-not-run"),
-  };
+  } as unknown as Context<State>;
   const res = await mw(ctx);
   assertEquals(res.status, 204);
   assertEquals(
@@ -22,10 +24,10 @@ Deno.test("cors preflight returns 204 with allow headers", async () => {
 
 Deno.test("cors sets ACAO and credentials when enabled", async () => {
   const mw = middlewares.cors({ credentials: true });
-  const ctx: any = {
+  const ctx = {
     req: new Request("http://x/foo"),
     next: () => new Response("ok"),
-  };
+  } as unknown as Context<State>;
   const res = await mw(ctx);
   assertEquals(res.status, 200);
   assertEquals(res.headers.get("Access-Control-Allow-Origin"), "*");

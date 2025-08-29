@@ -29,8 +29,8 @@
 - Build: `deno task build`
 - Start (serve built app): `deno task start`
 - Typecheck & lint (if configured): `deno fmt && deno lint && deno check`
- - Install git hooks (once): `deno task hooks:install`
- - Check hooks status: `deno task hooks:status`
+- Install git hooks (once): `deno task hooks:install`
+- Check hooks status: `deno task hooks:status`
 
 **Monorepo note**
 
@@ -410,8 +410,8 @@ Deno.test("hero fragment", async (t) => {
 - Do not introduce Node-specific tooling unless explicitly requested; stick to
   Deno/JSR ecosystem.
 - Favor incremental, test-backed changes over large refactors.
- - Install the local pre-commit hook with `deno task hooks:install` to mirror CI
-   checks (fmt, lint, typecheck, tests). CI still enforces these on PRs.
+- Install the local pre-commit hook with `deno task hooks:install` to mirror CI
+  checks (fmt, lint, typecheck, tests). CI still enforces these on PRs.
 
 ---
 
@@ -425,7 +425,8 @@ Deno.test("hero fragment", async (t) => {
   - `deno task ci:lint`
   - `deno task ci:typecheck`
   - `deno task ci:test` (fast tests without coverage)
-- Check status: `deno task hooks:status`. Uninstall: `deno task hooks:uninstall`.
+- Check status: `deno task hooks:status`. Uninstall:
+  `deno task hooks:uninstall`.
 - CI remains the source of truth; hooks are a developer convenience to catch
   issues earlier.
 

@@ -1,6 +1,8 @@
 import { assertEquals } from "jsr:@std/assert";
 import { middlewares } from "../middleware/index.ts";
 import { FakeTime } from "jsr:@std/testing/time";
+import { type Context } from "fresh";
+import { type State } from "../utils.ts";
 
 Deno.test("rateLimit disabled bypasses limiting", async () => {
   const mw = middlewares.rateLimit({
@@ -9,10 +11,10 @@ Deno.test("rateLimit disabled bypasses limiting", async () => {
     rateLimitWindowMs: 1000,
     enableCSP: true,
   });
-  const ctx: any = {
+  const ctx = {
     req: new Request("http://x/api/foo"),
     next: () => new Response("ok"),
-  };
+  } as unknown as Context<State>;
   const res = await mw(ctx);
   assertEquals(res.status, 200);
   assertEquals(await res.text(), "ok");
@@ -26,12 +28,12 @@ Deno.test("rateLimit enforces cap and refills over window", async () => {
     rateLimitWindowMs: 10,
     enableCSP: true,
   });
-  const ctx: any = {
+  const ctx = {
     req: new Request("http://x/api/foo", {
       headers: { "x-forwarded-for": "1.1.1.1" },
     }),
     next: () => new Response("ok"),
-  };
+  } as unknown as Context<State>;
 
   const res1 = await mw(ctx);
   assertEquals(res1.status, 200);
