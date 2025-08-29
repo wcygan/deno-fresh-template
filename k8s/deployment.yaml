@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/wcygan/deno-fresh-template/frontend:main
+          image: ghcr.io/wcygan/deno-fresh-template/frontend:de0cf98ae4985e917b877a4dfdafebc79078b16f
           imagePullPolicy: IfNotPresent
           resources:
             limits:
