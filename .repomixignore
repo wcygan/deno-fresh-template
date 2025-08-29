@@ -1,2 +1,3 @@
 frontend/deno.lock
-frontend/static/logo.svg
+frontend/static/*
+docs/static/*
