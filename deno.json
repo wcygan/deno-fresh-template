@@ -1,5 +1,6 @@
 {
   "tasks": {
+    "docs": "cd docs && bun start",
     "dev": "cd frontend && deno task dev",
     "docker:build": "cd frontend && docker build . -t fresh-app",
     "docker:run": "docker run -p 8080:80 fresh-app"
