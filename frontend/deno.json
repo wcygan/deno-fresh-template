@@ -6,8 +6,8 @@
     "build": "deno run -A dev.ts build",
     "start": "OTEL_DENO=true OTEL_SERVICE_NAME=frontend deno serve -A _fresh/server.js",
     "update": "deno run -A -r jsr:@fresh/update .",
-    "test": "deno test --allow-env --coverage=.cov && deno coverage .cov --lcov > coverage.lcov",
-    "test:watch": "deno test --allow-env --watch",
+    "test": "deno test --allow-env --allow-read --coverage=.cov && deno coverage .cov --lcov > coverage.lcov",
+    "test:watch": "deno test --allow-env --allow-read --watch",
     "coverage": "deno test --allow-env --coverage=.cov && deno coverage .cov --lcov > coverage.lcov"
   },
   "lint": {
