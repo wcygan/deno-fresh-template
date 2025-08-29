@@ -67,6 +67,24 @@
 - **CI**: Ensure `deno fmt`, `deno lint`, typecheck, and tests pass before
   merge.
 
+### Scripting & CLIs (Deno-first)
+
+- Use Deno for all repo automation (no bash/python). Prefer a shebang like
+  `#!/usr/bin/env -S deno run --allow-...` with the minimal permissions.
+- Import via JSR with exact versions (no ranges). Favor standard Web APIs and
+  Deno namespace APIs.
+- Pre-commit hook is implemented in Deno under `scripts/git-hooks/pre-commit`.
+- Helpers:
+  - Init/scan: `deno task scripts:init` (see `scripts/init.ts`).
+``  - Scan only (fail on violations): `deno task scripts:scan`.
+``- References:
+  - Deno scripts/CLIs: https://deno.com/learn/scripts-clis
+  - JSR with Deno: https://jsr.io/docs/with/deno
+  - JSR native imports: https://jsr.io/docs/native-imports
+  - Dax (optional shell helpers): https://github.com/dsherret/dax
+  - Web APIs: https://docs.deno.com/runtime/reference/web_platform_apis/
+  - Deno APIs: https://docs.deno.com/runtime/reference/deno_namespace_apis/
+
 ---
 
 ## Version pinning (no wildcards)

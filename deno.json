@@ -26,6 +26,8 @@
     "ci:all": "deno task ci:fmt && deno task ci:lint && deno task ci:typecheck && deno task ci:test",
     "hooks:install": "git config core.hooksPath scripts/git-hooks && echo 'Git hooks installed. (core.hooksPath=scripts/git-hooks)'",
     "hooks:uninstall": "git config --unset core.hooksPath || true && echo 'Git hooks uninstalled (core.hooksPath removed).'",
-    "hooks:status": "git config --get core.hooksPath || echo '(no hooksPath set)'"
+    "hooks:status": "git config --get core.hooksPath || echo '(no hooksPath set)'",
+    "scripts:init": "deno run --allow-read --allow-write --allow-env scripts/init.ts",
+    "scripts:scan": "deno run --allow-read --allow-env scripts/init.ts --scan --fail-on-violations"
   }
 }

@@ -1,19 +1,39 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env -S deno run --allow-run
+// Pre-commit hook implemented in Deno (policy: prefer Deno over bash/python).
+// Mirrors CI checks locally by running the aggregated task `ci:all`.
+//
+// References:
+// - Deno scripts/CLIs: https://deno.com/learn/scripts-clis
+// - Web APIs: https://docs.deno.com/runtime/reference/web_platform_apis/
+// - Deno APIs: https://docs.deno.com/runtime/reference/deno_namespace_apis/
 
-# Pre-commit hook to mirror CI checks locally.
-# Runs format, lint, typecheck, and tests (fast path without coverage).
+function log(msg: string) {
+  console.log(`[pre-commit] ${msg}`);
+}
 
-echo "[pre-commit] Running Deno checks…"
+async function run(cmd: string[], inherit = true) {
+  const p = new Deno.Command(cmd[0], {
+    args: cmd.slice(1),
+    stdout: inherit ? "inherit" : "piped",
+    stderr: inherit ? "inherit" : "piped",
+  });
+  return await p.output();
+}
 
-if ! command -v deno >/dev/null 2>&1; then
-  echo "[pre-commit] Error: Deno is not installed or not on PATH." >&2
-  echo "Install Deno: https://deno.com/manual@v2/getting_started/installation" >&2
-  exit 1
-fi
+async function main() {
+  log("Running Deno checks…");
+  try {
+    const out = await run(["deno", "task", "ci:all"], true);
+    if (out.code !== 0) {
+      Deno.exit(out.code);
+    }
+  } catch (err) {
+    console.error("[pre-commit] Failed to run Deno tasks:", err);
+    Deno.exit(1);
+  }
+  log("All checks passed.");
+}
 
-# Run the aggregated CI-like tasks defined in deno.json
-deno task ci:all
-
-echo "[pre-commit] All checks passed."
-
+if (import.meta.main) {
+  await main();
+}
