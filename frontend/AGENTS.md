@@ -3,6 +3,9 @@
 Concise contributor guide for this Deno Fresh 2.x repository. Prefer JSR imports
 and standard web APIs; no Node tooling is required for the app.
 
+Middleware docs: see `frontend/middleware/AGENTS.md` for how the middleware
+stack is composed and how it loads configuration from `frontend/env.ts`.
+
 ## Project Structure & Module Organization
 
 - `main.ts`: builds the `App`, registers global middleware, calls
@@ -13,6 +16,8 @@ and standard web APIs; no Node tooling is required for the app.
 - `static/`: static assets (images, CSS). Served via `staticFiles()`.
 - `utils.ts`: `createDefine()` helpers and the shared `State` interface.
 - `dev.ts`: dev/build entry (e.g., Tailwind plugin wiring) if present.
+- `env.ts`: validated environment + runtime config (server-only).
+- `middleware/AGENTS.md`: middleware composition, ordering, and config sources.
 - `*_test.ts`/`*_test.tsx`: tests near code.
 
 ## Build, Test, and Development Commands
@@ -187,3 +192,64 @@ Add to `frontend/deno.json` if helpful:
 - Do not store secrets in the repo. Use `.env`/runtime config and access in
   server code.
 - Keep per-request data in `ctx.state` only; avoid global mutable singletons.
+
+## Env & Runtime Config
+
+- Purpose: `frontend/env.ts` centralizes validated environment and app config.
+  It exports two things:
+  - `env`: parsed environment variables (basic, e.g., `PORT`, `LOG_LEVEL`).
+  - `config`: structured application config (security/observability, etc.).
+- Server-only: never import from islands; this file reads `Deno.env`.
+- Tests: pass `--allow-env` when a test depends on env/config.
+
+### Usage
+
+```ts
+// dev.ts
+import { env } from "./env.ts";
+const port = Number(env.PORT);
+```
+
+```ts
+// middleware/index.ts
+import { config } from "../env.ts";
+const { enableCSP, enableRateLimit } = config.security;
+```
+
+```ts
+// main.ts (example of composing)
+import { createMiddlewareStack } from "./middleware/index.ts";
+for (const mw of createMiddlewareStack()) app.use(mw);
+```
+
+### Config shape (relevant keys)
+
+- `env.PORT`: string port (default "8000").
+- `env.LOG_LEVEL`: "debug" | "info" | "warn" | "error" (default "info").
+- `env.OTEL_DENO`: "true" | "false" (default "true").
+- `config.security.enableCSP`: boolean (default true).
+- `config.security.enableRateLimit`: boolean (default true).
+- `config.security.rateLimitMax`: number (default 60).
+- `config.security.rateLimitWindowMs`: number (default 60000).
+
+### Environment overrides
+
+- Server
+  - `PORT`, `HOST`, `LOG_LEVEL`
+- Security
+  - `ENABLE_CSP` ("true"|"false")
+  - `ENABLE_RATE_LIMIT` ("true"|"false")
+  - `RATE_LIMIT_MAX` (number)
+  - `RATE_LIMIT_WINDOW_MS` (number, ms)
+- Observability
+  - `OTEL_DENO` ("true"|"false")
+  - `OTEL_SERVICE_NAME` (string)
+
+Defaults are applied via schema parsing; unset values fall back safely.
+
+### Gotchas
+
+- Do not import `env.ts` from client code or islands.
+- Keep secrets in real environment; avoid committing `.env` files.
+- When changing schema or keys, run `deno fmt && deno lint && deno check` and
+  update any tests that rely on env.

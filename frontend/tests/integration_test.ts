@@ -1,10 +1,8 @@
-import { app } from "../main.ts";
 import { assertEquals } from "jsr:@std/assert";
-
-const testApp = app.handler();
+import { h, req } from "./_helpers.ts";
 
 Deno.test("middleware stack works (healthz)", async () => {
-  const res = await testApp(new Request("http://x/healthz"));
+  const res = await h(req("/healthz"));
 
   // Check tracing header
   const requestId = res.headers.get("x-request-id");
