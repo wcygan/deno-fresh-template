@@ -1,5 +1,5 @@
 # Build stage
-FROM denoland/deno:latest AS builder
+FROM denoland/deno:2.4.5 AS builder
 
 WORKDIR /app
 
@@ -19,7 +19,7 @@ RUN deno task build && \
     deno install --allow-scripts=npm:@tailwindcss/oxide@4.1.12 --node-modules-dir=auto
 
 # Production stage
-FROM denoland/deno:latest
+FROM denoland/deno:2.4.5
 
 WORKDIR /app
 
