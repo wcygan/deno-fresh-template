@@ -12,6 +12,14 @@
     "cluster:sync-check": "deno run --allow-run --allow-read --allow-net scripts/check_cluster_sync.ts",
     "test": "cd frontend && deno test --allow-env --allow-read --coverage=.cov && deno coverage .cov --lcov > coverage.lcov",
     "test:watch": "cd frontend && deno test --allow-env --allow-read --watch",
-    "coverage": "cd frontend && deno test --allow-env --allow-read --coverage=.cov && deno coverage .cov --lcov > coverage.lcov"
+    "coverage": "cd frontend && deno test --allow-env --allow-read --coverage=.cov && deno coverage .cov --lcov > coverage.lcov",
+    "ci:fmt": "cd frontend && deno fmt --check",
+    "ci:lint": "cd frontend && deno lint",
+    "ci:typecheck": "cd frontend && deno check **/*.ts **/*.tsx",
+    "ci:test": "cd frontend && deno test --allow-env --allow-read",
+    "ci:all": "deno task ci:fmt && deno task ci:lint && deno task ci:typecheck && deno task ci:test",
+    "hooks:install": "git config core.hooksPath scripts/git-hooks && echo 'Git hooks installed. (core.hooksPath=scripts/git-hooks)'",
+    "hooks:uninstall": "git config --unset core.hooksPath || true && echo 'Git hooks uninstalled (core.hooksPath removed).'",
+    "hooks:status": "git config --get core.hooksPath || echo '(no hooksPath set)'"
   }
 }

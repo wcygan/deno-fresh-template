@@ -6,7 +6,7 @@ Deno.test({
   ignore: Deno.env.get("OTEL_DENO") !== "true",
   permissions: { env: true },
   async fn() {
-    const res = await h(req("/api2/tester"));
+    const res = await h(req("/healthz"));
     const traceId = res.headers.get("X-Trace-Id");
     assert(!!traceId && traceId.length === 32);
   },

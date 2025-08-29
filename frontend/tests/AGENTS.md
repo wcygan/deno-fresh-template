@@ -199,6 +199,34 @@ Deno.test("/api2 formats names", async (t) => {
 });
 ```
 
+## Infra Stability Tests (Template‑safe)
+
+These tests are designed to remain valid across projects that use this repo as a template. They verify infrastructure contracts (middleware, health/ready endpoints, config) without coupling to app‑specific routes or UI.
+
+- env_test.ts, env_config_test.ts: Validates env parsing and the typed config loader. Stable across apps; uses local process env, no external IO.
+- integration_test.ts: Calls /healthz and asserts global security headers. Stable if you keep the health endpoint and default middleware stack.
+- readyz_test.ts: Ensures /readyz returns 200 after a global load event. Stable if the readiness flag is preserved.
+- csp_timing_test.ts: Unit tests security() and timing() middlewares directly (CSP for HTML, timing headers). Route‑agnostic and stable.
+- middleware_error_handler_test.ts: Covers errorHandler() happy path (problem+json) and rethrow branch (known HTTP errors). Route‑agnostic.
+- middleware_rate_limit_test.ts: Exercises disabled path, 429 limiting, and refill with FakeTime. Route‑agnostic.
+- middleware_cors_test.ts: Covers CORS preflight (204 + allow headers) and credentials response. Route‑agnostic.
+- metrics_test.ts: Uses observe() directly, then hits /metrics to assert Prometheus lines. Decoupled from app routes; relies only on /metrics.
+- otel_trace_header_test.ts: Asserts X‑Trace‑Id is present when OTEL is enabled. Uses /healthz and is conditionally ignored unless OTEL_DENO="true"; stable with health endpoint.
+- fetch_stub_test.ts: Demonstrates stubbing global fetch. Self‑contained and stable.
+- snapshot_test.ts: Small, permission‑aware example; ignored if write isn’t granted.
+
+App‑specific (example/demo)
+
+- app_test.ts: Currently targets the demo programmatic route (/api2/:name). If your app removes or replaces that route, update or remove this test. Everything else above should remain unchanged.
+
+Template invariants (to keep tests stable)
+
+- Endpoints: Keep /healthz, /livez, /readyz, and /metrics.
+- Middleware stack: Keep requestId, timing, security, error handling, and logging in the default stack. Rate limiter may be scoped to /api.
+- Config shape: Keep the Env and AppConfig schemas in env.ts as the canonical source for server configuration.
+
+If you intentionally change any invariant, update only the affected test(s) — infra tests are grouped and documented to minimize churn.
+
 ## Permissions
 
 - Start with zero permissions. Add only what a test needs.

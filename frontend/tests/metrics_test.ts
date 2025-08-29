@@ -1,10 +1,10 @@
 import { assert, assertEquals } from "jsr:@std/assert";
 import { h, req } from "./_helpers.ts";
+import { observe } from "../utils/metrics.ts";
 
 Deno.test("metrics endpoint reports after a request", async () => {
-  // Trigger a request that records metrics
-  const r1 = await h(req("/api2/jane"));
-  assertEquals(r1.status, 200);
+  // Trigger a metric directly (decoupled from specific routes)
+  observe({ route: "/__test__", method: "GET", status: 200, durMs: 1 });
 
   // Now fetch metrics
   const res = await h(req("/metrics"));
@@ -15,5 +15,5 @@ Deno.test("metrics endpoint reports after a request", async () => {
   assert(body.length > 0);
   // Spot-check presence of our metric keys
   assert(body.includes("http_requests_total"));
-  assert(body.includes("/api2/:name"));
+  assert(body.includes("/__test__"));
 });

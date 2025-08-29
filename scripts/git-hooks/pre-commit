@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Pre-commit hook to mirror CI checks locally.
+# Runs format, lint, typecheck, and tests (fast path without coverage).
+
+echo "[pre-commit] Running Deno checks…"
+
+if ! command -v deno >/dev/null 2>&1; then
+  echo "[pre-commit] Error: Deno is not installed or not on PATH." >&2
+  echo "Install Deno: https://deno.com/manual@v2/getting_started/installation" >&2
+  exit 1
+fi
+
+# Run the aggregated CI-like tasks defined in deno.json
+deno task ci:all
+
+echo "[pre-commit] All checks passed."
+
