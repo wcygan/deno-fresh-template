@@ -8,6 +8,10 @@ const config: Config = {
   title: 'Deno Fresh Template',
   tagline: 'Dinosaurs are cool',
   favicon: 'img/favicon.ico',
+  markdown: {
+    mermaid: true,
+  },
+  themes: ['@docusaurus/theme-mermaid'],
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {

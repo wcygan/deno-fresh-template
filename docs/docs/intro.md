@@ -3,46 +3,25 @@ sidebar_position: 1
 slug: /
 ---
 
-# Tutorial Intro
+# Introduction
 
-Let's discover **Docusaurus in less than 5 minutes**.
+Get started with [Deno Fresh](https://fresh.deno.dev/). 
 
-## Getting Started
+This template comes with:
 
-Get started by **creating a new site**.
+1. A working [Deno Fresh](https://fresh.deno.dev/) application
+2. [Docker build](https://docs.deno.com/runtime/reference/docker/) and [push to Github Container Registry](https://github.com/wcygan/deno-fresh-template/blob/main/.github/workflows/build-and-push-to-ghcr.yml)
+3. [Kubernetes](https://kubernetes.io/) Deploy
+4. Documentation with [Docusaurus](https://docusaurus.io/) (and [Mermaid support](https://docusaurus.io/docs/next/markdown-features/diagrams)) and [GitHub Pages Deployment](https://github.com/wcygan/deno-fresh-template/blob/main/.github/workflows/deploy-github-pages.yml)
 
-Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
+## Diagrams
 
-### What you'll need
+You can embed Mermaid diagrams directly in Markdown once enabled.
 
-- [Node.js](https://nodejs.org/en/download/) version 18.0 or above:
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
-
-## Generate a new site
-
-Generate a new Docusaurus site using the **classic template**.
-
-The classic template will automatically be added to your project after you run the command:
-
-```bash
-npm init docusaurus@latest my-website classic
+```mermaid
+graph TD
+  A[Start] --> B{Is Mermaid enabled?}
+  B -- Yes --> C[Render diagram]
+  B -- No --> D[Install theme]
+  D --> E[Enable markdown.mermaid]
 ```
-
-You can type this command into Command Prompt, Powershell, Terminal, or any other integrated terminal of your code editor.
-
-The command also installs all necessary dependencies you need to run Docusaurus.
-
-## Start your site
-
-Run the development server:
-
-```bash
-cd my-website
-npm run start
-```
-
-The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
-
-The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
-
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
