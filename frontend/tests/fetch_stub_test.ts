@@ -8,4 +8,3 @@ Deno.test("stubs global fetch and restores automatically", async () => {
   const res = await fetch("http://example.test/");
   assertEquals(await res.text(), "ok");
 });
-

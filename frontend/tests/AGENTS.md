@@ -10,8 +10,8 @@ with deeper, test-specific practices.
 - Watch mode: `deno task test:watch`
 - Coverage (lcov): `deno task coverage`
 - Minimal run (no tasks): `deno test`
- - Filter tests by name: `deno test --filter "metrics|healthz"`
- - Stop on first failure: `deno test --fail-fast`
+- Filter tests by name: `deno test --filter "metrics|healthz"`
+- Stop on first failure: `deno test --fail-fast`
 
 Notes
 
@@ -55,8 +55,8 @@ Notes
 - Co-located unit tests near code:
   - `components/Button_test.tsx`, `utils/format_test.ts`,
     `islands/Counter_logic_test.ts` (logic-only).
-- Filenames end with `*_test.ts` or `*_test.tsx`. Snapshots live beside tests
-  in `__snapshots__/`.
+- Filenames end with `*_test.ts` or `*_test.tsx`. Snapshots live beside tests in
+  `__snapshots__/`.
 
 ## Patterns & Examples
 
@@ -105,7 +105,11 @@ import { FakeTime, spy, stub } from "jsr:@std/testing/mock";
 import { assertEquals } from "jsr:@std/assert";
 
 Deno.test("stub fetch", async () => {
-  using s = stub(globalThis, "fetch", () => Promise.resolve(new Response("ok")));
+  using s = stub(
+    globalThis,
+    "fetch",
+    () => Promise.resolve(new Response("ok")),
+  );
   // call code that uses fetch()
 });
 
@@ -141,7 +145,7 @@ Deno.test("hero fragment", async (t) => {
   intent. Keep usage consistent and minimal.
 
 ```ts
-import { describe, it, beforeEach, afterEach } from "jsr:@std/testing/bdd";
+import { afterEach, beforeEach, describe, it } from "jsr:@std/testing/bdd";
 import { assertEquals } from "jsr:@std/assert";
 import { h, req } from "./_helpers.ts";
 
@@ -156,8 +160,8 @@ describe("/api2 greeting", () => {
 ## Web Testing (E2E)
 
 - Prefer integration tests via `app.handler()`. For browser-level validation,
-  keep E2E tests in `e2e/` and follow Deno’s Web Testing (WebDriver BiDi)
-  docs. Run with restricted permissions (e.g., `--allow-net=localhost`).
+  keep E2E tests in `e2e/` and follow Deno’s Web Testing (WebDriver BiDi) docs.
+  Run with restricted permissions (e.g., `--allow-net=localhost`).
 - E2E should be sparse and focus on critical user flows; integration tests
   provide breadth and speed.
 
@@ -181,10 +185,12 @@ import { assertEquals } from "jsr:@std/assert";
 import { h, req } from "./_helpers.ts";
 
 Deno.test("/api2 formats names", async (t) => {
-  for (const [name, expected] of [
-    ["jessie", "Hello, Jessie!"],
-    ["taylor", "Hello, Taylor!"],
-  ] as const) {
+  for (
+    const [name, expected] of [
+      ["jessie", "Hello, Jessie!"],
+      ["taylor", "Hello, Taylor!"],
+    ] as const
+  ) {
     await t.step(name, async () => {
       const res = await h(req(`/api2/${name}`));
       assertEquals(await res.text(), expected);
@@ -221,7 +227,7 @@ Deno.test({
   name: "trace header present when OTEL enabled",
   ignore: Deno.env.get("OTEL_DENO") !== "true",
   permissions: { env: true },
-  async fn() { /* ... */ },
+  async fn() {/* ... */},
 });
 ```
 
@@ -238,25 +244,25 @@ Deno.test({
   commit the lockfile in the same PR.
 - Flakiness: eliminate sleeps and real network; use stubs and fake clocks.
 - Snapshots: review updates; avoid wide or fast-changing content in snapshots.
- - Parallelism: avoid shared mutable state; serialize via one test with
-   `t.step()` if a shared resource is unavoidable.
- - Filtering: use `--filter` while iterating; ensure no focused `.only` tests
-   remain in commits.
+- Parallelism: avoid shared mutable state; serialize via one test with
+  `t.step()` if a shared resource is unavoidable.
+- Filtering: use `--filter` while iterating; ensure no focused `.only` tests
+  remain in commits.
 
 ## Coverage
 
 - Generate locally: `deno task coverage`
 - Interpreting results: focus on meaningful paths; avoid chasing 100%.
 - If coverage data becomes stale, clear `.cov/` and regenerate.
- - Excluding generated/vendor code: configure ignore patterns so coverage
-   reflects app code.
+- Excluding generated/vendor code: configure ignore patterns so coverage
+  reflects app code.
 
 ## CI & Pre-merge Checklist
 
 - Run: `deno fmt`, `deno lint`, typecheck (`deno check`), and tests.
 - Ensure tasks succeed: `deno task test` (includes coverage in this repo).
 - Keep diffs focused and pinned versions intact; no wildcard versions.
- - No `.only` in committed tests; avoid unexplained skipped tests.
+- No `.only` in committed tests; avoid unexplained skipped tests.
 
 ## When to Introduce Test Helpers
 

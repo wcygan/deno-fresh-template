@@ -8,7 +8,7 @@ Deno.test({
   ignore: !writeGranted,
   permissions: { read: true, write: true },
   async fn(t) {
-    const html = "<section class=\"hero\">Welcome</section>";
+    const html = '<section class="hero">Welcome</section>';
     await assertSnapshot(t, html);
   },
 });

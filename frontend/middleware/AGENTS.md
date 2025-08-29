@@ -1,7 +1,7 @@
 # Middleware Guide
 
-Canonical guidance for Fresh 2.x middleware in this repo. Explains how the
-stack is composed and how configuration is sourced from `frontend/env.ts`.
+Canonical guidance for Fresh 2.x middleware in this repo. Explains how the stack
+is composed and how configuration is sourced from `frontend/env.ts`.
 
 ## Where Things Live
 
@@ -15,7 +15,8 @@ stack is composed and how configuration is sourced from `frontend/env.ts`.
 - Function signature: `(ctx) => Response | Promise<Response>`.
 - Use `define.middleware(...)` for helpers that need shared `State` typing.
 - Per-request data goes on `ctx.state` (typed by `State` from `utils.ts`).
-- Prefer folder-scoped file middlewares for route subtrees (`routes/**/_middleware.ts`).
+- Prefer folder-scoped file middlewares for route subtrees
+  (`routes/**/_middleware.ts`).
 
 ```ts
 // utils.ts
@@ -32,7 +33,8 @@ export interface State {
 
 - `requestId`: assigns `ctx.state.requestId` and adds `X-Request-ID` header.
 - `timing`: measures duration, sets `Server-Timing` and `X-Response-Time`; if
-  OpenTelemetry is active, also sets `X-Trace-Id`/`X-Span-Id` from the active span.
+  OpenTelemetry is active, also sets `X-Trace-Id`/`X-Span-Id` from the active
+  span.
 - `security(options = config.security)`: sets common security headers and
   conditional CSP for HTML responses.
 - `rateLimit(options = config.security)`: simple token bucket keyed by
@@ -52,17 +54,19 @@ excluding pieces and appending custom middlewares.
 import { createMiddlewareStack, middlewares } from "./middleware/index.ts";
 import { define } from "./utils.ts";
 
-for (const mw of createMiddlewareStack({
-  // Default order: requestId → timing → errorHandler → security → logging
-  // include: ["requestId", "timing", ...] // to override order
-  // exclude: ["logging"] // to drop one
-  custom: [
-    define.middleware(async (ctx) => {
-      ctx.state.shared = "hello";
-      return await ctx.next();
-    }),
-  ],
-})) {
+for (
+  const mw of createMiddlewareStack({
+    // Default order: requestId → timing → errorHandler → security → logging
+    // include: ["requestId", "timing", ...] // to override order
+    // exclude: ["logging"] // to drop one
+    custom: [
+      define.middleware(async (ctx) => {
+        ctx.state.shared = "hello";
+        return await ctx.next();
+      }),
+    ],
+  })
+) {
   app.use(mw);
 }
 
@@ -72,7 +76,8 @@ app.use("/api", middlewares.rateLimit());
 
 Rules:
 
-- Mount global middlewares before routes (`app.fsRoutes()` and programmatic routes).
+- Mount global middlewares before routes (`app.fsRoutes()` and programmatic
+  routes).
 - Use path scoping (`app.use("/api", ...)`) to limit impact.
 - Add folder-scoped `_middleware.ts` under `routes/**/` for subtree concerns.
 
@@ -85,8 +90,8 @@ Rules:
 
 Relevant pieces used by middleware come from `config.security`:
 
-- `enableCSP` (boolean, default `true`): if `true`, `security` middleware adds
-  a conservative `Content-Security-Policy` header for HTML responses.
+- `enableCSP` (boolean, default `true`): if `true`, `security` middleware adds a
+  conservative `Content-Security-Policy` header for HTML responses.
 - `enableRateLimit` (boolean, default `true`): governs whether `rateLimit`
   checks tokens.
 - `rateLimitMax` (number, default `60`): max requests per window per `ip:path`.
@@ -116,7 +121,7 @@ Notes:
 
 ## Adding New Middleware
 
-1) Implement it in `middleware/index.ts` and add to the `middlewares` map.
+1. Implement it in `middleware/index.ts` and add to the `middlewares` map.
 
 ```ts
 export const middlewares = {
@@ -129,10 +134,10 @@ export const middlewares = {
 };
 ```
 
-2) Include it by name via `createMiddlewareStack({ include: [ ... ] })`, or add
+2. Include it by name via `createMiddlewareStack({ include: [ ... ] })`, or add
    it as a `custom` entry in `main.ts`.
 
-3) If it needs configuration, extend `AppConfigSchema` in `env.ts` and plumb a
+3. If it needs configuration, extend `AppConfigSchema` in `env.ts` and plumb a
    typed options object similar to `security`.
 
 ## Testing Middleware
@@ -160,4 +165,3 @@ Deno.test("middleware stack sets headers", async () => {
 - Do scope middlewares to prefixes or route folders for least privilege.
 - Don’t import `env.ts` from client code; it reads process env.
 - Don’t widen the `State` shape casually; update `utils.ts` and review usages.
-

@@ -71,12 +71,16 @@
 
 - **Docker images**: Pin to an exact Deno version. Example:
   `FROM denoland/deno:2.4.5` for both build and runtime stages.
-- **No latest/ranges**: Avoid `latest`, caret (`^`), tilde (`~`), `*`, or version ranges everywhere.
+- **No latest/ranges**: Avoid `latest`, caret (`^`), tilde (`~`), `*`, or
+  version ranges everywhere.
 - **JSR imports**: Use exact versions (e.g., `jsr:@fresh/core@2.0.0-alpha.63`).
 - **NPM imports**: Use exact versions (e.g., `npm:preact@10.27.1`).
-- **Lockfile**: Keep `deno.lock` committed and up to date; changes should be intentional.
-- **Upgrades**: Bump versions explicitly, run `deno cache --reload` and tests, then commit the lockfile in the same PR.
-- **Review checklist**: PRs should contain no `latest`, `^`, `~`, or version ranges in Dockerfiles or `deno.json` imports.
+- **Lockfile**: Keep `deno.lock` committed and up to date; changes should be
+  intentional.
+- **Upgrades**: Bump versions explicitly, run `deno cache --reload` and tests,
+  then commit the lockfile in the same PR.
+- **Review checklist**: PRs should contain no `latest`, `^`, `~`, or version
+  ranges in Dockerfiles or `deno.json` imports.
 
 ---
 

@@ -96,7 +96,10 @@ function isObject(item: unknown): item is Record<string, unknown> {
 }
 
 // Simple deep merge for plain objects
-function deepMerge(target: Record<string, unknown>, ...sources: unknown[]): any {
+function deepMerge(
+  target: Record<string, unknown>,
+  ...sources: unknown[]
+): any {
   if (!sources.length) return target;
   const source = sources.shift();
   if (isObject(target) && isObject(source)) {
@@ -140,7 +143,9 @@ export function loadConfig(overrides?: Partial<AppConfig>): AppConfig {
         : get("ENABLE_RATE_LIMIT") === "false"
         ? false
         : undefined,
-      rateLimitMax: get("RATE_LIMIT_MAX") ? Number(get("RATE_LIMIT_MAX")) : undefined,
+      rateLimitMax: get("RATE_LIMIT_MAX")
+        ? Number(get("RATE_LIMIT_MAX"))
+        : undefined,
       rateLimitWindowMs: get("RATE_LIMIT_WINDOW_MS")
         ? Number(get("RATE_LIMIT_WINDOW_MS"))
         : undefined,
@@ -184,7 +189,10 @@ export function loadConfig(overrides?: Partial<AppConfig>): AppConfig {
   } as const;
 
   const merged = deepMerge(
-    { app: {}, server: {}, security: {}, observability: {} } as Record<string, unknown>,
+    { app: {}, server: {}, security: {}, observability: {} } as Record<
+      string,
+      unknown
+    >,
     removeUndefined(envSource) as Record<string, unknown>,
     overrides || {},
   );

@@ -23,4 +23,3 @@ export function expectHeader(res: Response, name: string, expected: string) {
     throw new Error(`Expected header ${name}=${expected}, got ${actual}`);
   }
 }
-

@@ -6,7 +6,9 @@ Deno.test("errorHandler returns problem+json on unexpected error", async () => {
   const ctx: any = {
     state: { requestId: "req-1" },
     req: new Request("http://x/test"),
-    next: () => { throw new Error("boom"); },
+    next: () => {
+      throw new Error("boom");
+    },
   };
   const res = await mw(ctx);
   assertEquals(res.status, 500);
@@ -21,7 +23,13 @@ Deno.test("errorHandler rethrows known http errors", async () => {
   const ctx: any = {
     state: { requestId: "req-2" },
     req: new Request("http://x/test"),
-    next: () => { const e: any = new Error("not found"); e.status = 404; throw e; },
+    next: () => {
+      const e: any = new Error("not found");
+      e.status = 404;
+      throw e;
+    },
   };
-  await assertRejects(async () => { await mw(ctx); });
+  await assertRejects(async () => {
+    await mw(ctx);
+  });
 });

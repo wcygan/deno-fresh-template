@@ -4,7 +4,10 @@ import { middlewares } from "../middleware/index.ts";
 Deno.test("security middleware sets CSP for HTML content", async () => {
   const mw = middlewares.security();
   const ctx: any = {
-    next: () => new Response("<html/>", { headers: { "content-type": "text/html; charset=utf-8" } }),
+    next: () =>
+      new Response("<html/>", {
+        headers: { "content-type": "text/html; charset=utf-8" },
+      }),
   };
   const res = await mw(ctx);
   assertEquals(res.headers.get("X-Content-Type-Options"), "nosniff");

@@ -14,4 +14,3 @@ describe("BDD example", () => {
     assertEquals(res.headers.get("X-Content-Type-Options"), "nosniff");
   });
 });
-

@@ -9,14 +9,16 @@ export const app = new App<State>();
 app.use(staticFiles());
 
 // Modular middleware stack (config-driven). Add custom shared example.
-for (const mw of createMiddlewareStack({
-  custom: [
-    define.middleware(async (ctx) => {
-      ctx.state.shared = "hello";
-      return await ctx.next();
-    }),
-  ],
-})) {
+for (
+  const mw of createMiddlewareStack({
+    custom: [
+      define.middleware(async (ctx) => {
+        ctx.state.shared = "hello";
+        return await ctx.next();
+      }),
+    ],
+  })
+) {
   app.use(mw);
 }
 

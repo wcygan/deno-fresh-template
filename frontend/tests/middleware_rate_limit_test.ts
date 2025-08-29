@@ -3,7 +3,12 @@ import { middlewares } from "../middleware/index.ts";
 import { FakeTime } from "jsr:@std/testing/time";
 
 Deno.test("rateLimit disabled bypasses limiting", async () => {
-  const mw = middlewares.rateLimit({ enableRateLimit: false, rateLimitMax: 1, rateLimitWindowMs: 1000, enableCSP: true });
+  const mw = middlewares.rateLimit({
+    enableRateLimit: false,
+    rateLimitMax: 1,
+    rateLimitWindowMs: 1000,
+    enableCSP: true,
+  });
   const ctx: any = {
     req: new Request("http://x/api/foo"),
     next: () => new Response("ok"),
@@ -15,9 +20,16 @@ Deno.test("rateLimit disabled bypasses limiting", async () => {
 
 Deno.test("rateLimit enforces cap and refills over window", async () => {
   using _time = new FakeTime(1_000_000);
-  const mw = middlewares.rateLimit({ enableRateLimit: true, rateLimitMax: 1, rateLimitWindowMs: 10, enableCSP: true });
+  const mw = middlewares.rateLimit({
+    enableRateLimit: true,
+    rateLimitMax: 1,
+    rateLimitWindowMs: 10,
+    enableCSP: true,
+  });
   const ctx: any = {
-    req: new Request("http://x/api/foo", { headers: { "x-forwarded-for": "1.1.1.1" } }),
+    req: new Request("http://x/api/foo", {
+      headers: { "x-forwarded-for": "1.1.1.1" },
+    }),
     next: () => new Response("ok"),
   };
 
@@ -32,4 +44,3 @@ Deno.test("rateLimit enforces cap and refills over window", async () => {
   const res3 = await mw(ctx);
   assertEquals(res3.status, 200);
 });
-

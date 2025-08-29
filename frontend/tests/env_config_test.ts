@@ -57,7 +57,9 @@ Deno.test({
   permissions: { env: true },
   fn() {
     Deno.env.set("PORT", "8001");
-    const cfg = loadConfig({ server: { port: "9000", host: "0.0.0.0", logLevel: "info" } });
+    const cfg = loadConfig({
+      server: { port: "9000", host: "0.0.0.0", logLevel: "info" },
+    });
     assertEquals(cfg.server.port, "9000");
   },
 });
