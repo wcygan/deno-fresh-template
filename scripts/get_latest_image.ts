@@ -1,3 +1,5 @@
+#!/usr/bin/env -S deno run --allow-env
+
 // Query the newest public GHCR image tag for this repo, no GH token needed.
 // Usage: deno run --allow-net scripts/get_latest_image.ts
 // Env (optional):

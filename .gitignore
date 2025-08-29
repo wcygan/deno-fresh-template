@@ -3,3 +3,4 @@ frontend/.cov/
 frontend/coverage.lcov
 node_modules/
 **/node_modules/
+.bin/

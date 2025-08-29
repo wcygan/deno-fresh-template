@@ -1,3 +1,5 @@
+#!/usr/bin/env -S deno run --allow-env
+
 // Check alignment between:
 // 1) Latest GHCR image tag (via existing task `image:latest`)
 // 2) Image specified in k8s/deployment.yaml
