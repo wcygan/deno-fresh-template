@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+
+# Deno
+.deno/
+
+# Fresh build output
+_fresh/
+
+# Node modules (if any)
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Documentation
+README.md
+CLAUDE.md
+*.md
+
+# Temporary files
+tmp/
+temp/
