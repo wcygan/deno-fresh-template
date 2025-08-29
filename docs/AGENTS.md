@@ -3,7 +3,7 @@
 ## Project Structure & Module Organization
 
 - Root config: `docusaurus.config.ts`, `sidebars.ts`, `package.json`, `bun.lock`.
-- Content: `docs/` (documentation), `blog/` (posts), `static/` (assets served as-is).
+- Content: `docs/` (documentation), `static/` (assets served as-is).
 - UI/pages: `src/pages/` (React/TSX pages), `src/css/` (custom styles).
 - Build output: `.docusaurus/` (cache) and `build/` (static site after build).
 
@@ -20,7 +20,7 @@
 ## Coding Style & Naming Conventions
 
 - TypeScript/React with 2-space indentation; keep imports sorted logically.
-- Components: PascalCase (e.g., `MyComponent.tsx`). Docs/blog files: kebab-case (e.g., `getting-started.md`).
+- Components: PascalCase (e.g., `MyComponent.tsx`). Docs files: kebab-case (e.g., `getting-started.md`).
 - Prefer MDX for rich content; keep headings hierarchical and concise.
 - Links: use relative links within `docs/`; place images in `static/img/`.
 
