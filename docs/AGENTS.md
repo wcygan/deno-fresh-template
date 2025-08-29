@@ -161,6 +161,7 @@ flowchart LR
 - Prefer verbs in edge labels ("validate", "redirect").
 - Align diagram semantics with text: add a one‑line caption before/after the diagram.
 - Test in dev: `bun run start` renders Mermaid; adjust sizes and labels until legible.
+- Use <br> instead of \n for line breaks in labels.
 
 ### Common Pitfalls
 

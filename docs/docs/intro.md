@@ -52,8 +52,8 @@ For example, we can use a `Service` that targets a `Deployment` managing 3 Pods 
 flowchart LR
   subgraph "Kubernetes Cluster"
     subgraph "Namespace: app"
-      S[(Service\nClusterIP)]
-      D[[Deployment\nfresh-app]]
+      S[(Service<br>ClusterIP)]
+      D[[Deployment<br>fresh-app]]
       P1[(Pod 1)]
       P2[(Pod 2)]
       P3[(Pod 3)]
