@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fresh-app
+  namespace: app
+  labels:
+    app: fresh-app
+spec:
+  type: ClusterIP
+  selector:
+    app: fresh-app
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+

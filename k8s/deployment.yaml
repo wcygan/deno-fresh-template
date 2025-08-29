@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fresh-app
+  namespace: app
+  labels:
+    app: fresh-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fresh-app
+  template:
+    metadata:
+      labels:
+        app: fresh-app
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/wcygan/deno-fresh-template/frontend:main
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+          ports:
+            - containerPort: 8000
+              name: http
