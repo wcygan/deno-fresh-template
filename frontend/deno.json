@@ -6,7 +6,7 @@
     "build": "deno run -A dev.ts build",
     "start": "deno serve -A _fresh/server.js",
     "update": "deno run -A -r jsr:@fresh/update .",
-    "test": "deno test --allow-env",
+    "test": "deno test --allow-env --coverage=.cov && deno coverage .cov --lcov > coverage.lcov",
     "test:watch": "deno test --allow-env --watch",
     "coverage": "deno test --allow-env --coverage=.cov && deno coverage .cov --lcov > coverage.lcov"
   },

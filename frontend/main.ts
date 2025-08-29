@@ -1,5 +1,7 @@
 import { App, staticFiles } from "fresh";
 import { define, type State } from "./utils.ts";
+import { renderProm, observe } from "./utils/metrics.ts";
+import { allow } from "./utils/rate_limit.ts";
 
 export const app = new App<State>();
 
@@ -41,8 +43,10 @@ app.use(define.middleware(async (ctx) => {
   try {
     const res = await ctx.next();
     const durMs = Math.round(performance.now() - ctx.state.start);
-    res.headers.set("Server-Timing", `app;dur=${durMs}`);
-    res.headers.set("X-Response-Time", `${durMs}ms`);
+    const headers = new Headers(res.headers);
+    headers.set("Server-Timing", `app;dur=${durMs}`);
+    headers.set("X-Response-Time", `${durMs}ms`);
+    headers.set("X-Request-ID", ctx.state.requestId);
 
     console.log(
       JSON.stringify({
@@ -56,8 +60,13 @@ app.use(define.middleware(async (ctx) => {
         durMs,
       }),
     );
-    return res;
+    return new Response(res.body, { status: res.status, headers });
   } catch (err) {
+    // Preserve framework-provided HTTP errors (e.g., 404) without converting to 500
+    const status = (err as { status?: number } | null)?.status;
+    if (typeof status === "number" && status >= 400 && status < 600) {
+      throw err;
+    }
     const durMs = Math.round(performance.now() - ctx.state.start);
     const problem = {
       type: "about:blank",
@@ -88,6 +97,48 @@ app.use(define.middleware(async (ctx) => {
     });
   }
 }));
+
+// Health endpoints and readiness
+let ready = false;
+app.get("/healthz", () => new Response("ok"));
+app.get("/livez", () => new Response("ok"));
+app.get("/readyz", () => new Response(ready ? "ready" : "not-ready", { status: ready ? 200 : 503 }));
+globalThis.addEventListener("load", () => { ready = true; });
+
+// Metrics endpoint
+app.get(
+  "/metrics",
+  () => new Response(renderProm(), { headers: { "content-type": "text/plain; version=0.0.4" } }),
+);
+
+// Scoped rate limiter for /api
+app.use("/api", define.middleware((ctx) => {
+  const ip = ctx.req.headers.get("x-forwarded-for") ??
+    ctx.req.headers.get("cf-connecting-ip") ??
+    "unknown";
+  const key = `${ip}:${new URL(ctx.req.url).pathname}`;
+  if (!allow(key)) return new Response("rate limited", { status: 429 });
+  return ctx.next();
+}));
+
+// Example programmatic route used in tests (with metrics observation)
+app.get("/api2/:name", async (ctx) => {
+  const t0 = performance.now();
+  const name = ctx.params.name;
+  const res = new Response(
+    `Hello, ${name.charAt(0).toUpperCase() + name.slice(1)}!`,
+  );
+  observe({
+    route: "/api2/:name",
+    method: ctx.req.method,
+    status: res.status,
+    durMs: Math.round(performance.now() - t0),
+  });
+  return res;
+});
+
+// Health check endpoint retained for tests
+app.get("/api/health", () => new Response("ok"));
 
 // Include file-system based routes here
 app.fsRoutes();
