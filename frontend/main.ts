@@ -1,5 +1,6 @@
 import { App, staticFiles } from "fresh";
 import { define, type State } from "./utils.ts";
+import { trace } from "npm:@opentelemetry/api@1";
 import { observe, renderProm } from "./utils/metrics.ts";
 import { allow } from "./utils/rate_limit.ts";
 
@@ -47,6 +48,10 @@ app.use(define.middleware(async (ctx) => {
     headers.set("Server-Timing", `app;dur=${durMs}`);
     headers.set("X-Response-Time", `${durMs}ms`);
     headers.set("X-Request-ID", ctx.state.requestId);
+    // Correlate with OpenTelemetry (when OTEL_DENO=true)
+    const sc = trace.getActiveSpan()?.spanContext();
+    if (sc?.traceId) headers.set("X-Trace-Id", sc.traceId);
+    if (sc?.spanId) headers.set("X-Span-Id", sc.spanId);
 
     console.log(
       JSON.stringify({
@@ -58,6 +63,8 @@ app.use(define.middleware(async (ctx) => {
         path: new URL(ctx.req.url).pathname,
         status: res.status,
         durMs,
+        traceId: sc?.traceId ?? null,
+        spanId: sc?.spanId ?? null,
       }),
     );
     return new Response(res.body, { status: res.status, headers });
@@ -135,6 +142,10 @@ app.use(
 
 // Example programmatic route used in tests (with metrics observation)
 app.get("/api2/:name", (ctx) => {
+  // Optional: decorate the active span for nicer traces
+  const span = trace.getActiveSpan();
+  span?.setAttribute("http.route", "/api2/:name");
+  span?.updateName(`${ctx.req.method} /api2/:name`);
   const t0 = performance.now();
   const name = ctx.params.name;
   const res = new Response(
