@@ -6,6 +6,15 @@
 
 ---
 
+## Where To Find Docs
+
+- **Kubernetes**: See `k8s/AGENTS.md` for manifests layout, apply/verify
+  workflows, Skaffold usage, and operational notes (HPA/PDB/Service/Deployment).
+- **Docs/Docusaurus**: See `docs/AGENTS.md` for running the docs site, authoring
+  conventions, navigation/sidebars, and deployment/CI details.
+- **Frontend App**: See `frontend/AGENTS.md` for Fresh app structure, dev/build
+  tasks, routing/middleware/islands patterns, and testing guidance.
+
 ## Quick start
 
 **Prereqs**
