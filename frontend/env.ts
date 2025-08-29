@@ -45,6 +45,15 @@ const BaseConfig = z.object({
     enableRateLimit: z.boolean().default(true),
     rateLimitMax: z.number().default(60),
     rateLimitWindowMs: z.number().default(60_000),
+    // Additional headers and hardening knobs
+    frameOptions: z.enum(["DENY", "SAMEORIGIN"]).default("DENY"),
+    enableCorp: z.boolean().default(false),
+    enableCoop: z.boolean().default(false),
+    enableCoep: z.boolean().default(false),
+    hstsEnabled: z.boolean().default(true),
+    hstsMaxAge: z.number().default(31_536_000),
+    hstsIncludeSubDomains: z.boolean().default(true),
+    hstsPreload: z.boolean().default(false),
   }),
   observability: z.object({
     enableOtel: z.boolean().default(true),
@@ -148,6 +157,41 @@ export function loadConfig(overrides?: Partial<AppConfig>): AppConfig {
         : undefined,
       rateLimitWindowMs: get("RATE_LIMIT_WINDOW_MS")
         ? Number(get("RATE_LIMIT_WINDOW_MS"))
+        : undefined,
+      frameOptions: get("FRAME_OPTIONS") as
+        | "DENY"
+        | "SAMEORIGIN"
+        | undefined,
+      enableCorp: get("ENABLE_CORP") === "true"
+        ? true
+        : get("ENABLE_CORP") === "false"
+        ? false
+        : undefined,
+      enableCoop: get("ENABLE_COOP") === "true"
+        ? true
+        : get("ENABLE_COOP") === "false"
+        ? false
+        : undefined,
+      enableCoep: get("ENABLE_COEP") === "true"
+        ? true
+        : get("ENABLE_COEP") === "false"
+        ? false
+        : undefined,
+      hstsEnabled: get("HSTS_ENABLED") === "true"
+        ? true
+        : get("HSTS_ENABLED") === "false"
+        ? false
+        : undefined,
+      hstsMaxAge: get("HSTS_MAX_AGE") ? Number(get("HSTS_MAX_AGE")) : undefined,
+      hstsIncludeSubDomains: get("HSTS_INCLUDE_SUBDOMAINS") === "true"
+        ? true
+        : get("HSTS_INCLUDE_SUBDOMAINS") === "false"
+        ? false
+        : undefined,
+      hstsPreload: get("HSTS_PRELOAD") === "true"
+        ? true
+        : get("HSTS_PRELOAD") === "false"
+        ? false
         : undefined,
     },
     observability: {

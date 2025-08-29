@@ -3,11 +3,41 @@ import { type State } from "../utils.ts";
 import { config } from "../env.ts";
 import { trace } from "npm:@opentelemetry/api@1";
 
+type SecurityOptions = {
+  enableCSP: boolean;
+  enableRateLimit: boolean;
+  rateLimitMax: number;
+  rateLimitWindowMs: number;
+  frameOptions?: "DENY" | "SAMEORIGIN";
+  enableCorp?: boolean;
+  enableCoop?: boolean;
+  enableCoep?: boolean;
+  hstsEnabled?: boolean;
+  hstsMaxAge?: number;
+  hstsIncludeSubDomains?: boolean;
+  hstsPreload?: boolean;
+};
+
+type RateLimitOptions =
+  & Pick<
+    SecurityOptions,
+    "enableRateLimit" | "rateLimitMax" | "rateLimitWindowMs"
+  >
+  & { enableCSP?: boolean };
+
 // Middleware factory functions
 export const middlewares = {
   requestId: (): Middleware<State> => {
     return async (ctx) => {
-      ctx.state.requestId = crypto.randomUUID();
+      // Prefer upstream request id if present and a valid UUID
+      const upstream = ctx.req.headers.get("x-request-id") ?? undefined;
+      const isUuid = (s: string | undefined) =>
+        !!s &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+          .test(s);
+      ctx.state.requestId = isUuid(upstream)
+        ? (upstream as string)
+        : crypto.randomUUID();
       const res = await ctx.next();
       res.headers.set("X-Request-ID", ctx.state.requestId);
       return res;
@@ -31,12 +61,40 @@ export const middlewares = {
     };
   },
 
-  security: (options = config.security): Middleware<State> => {
+  security: (
+    options: SecurityOptions = config.security as SecurityOptions,
+  ): Middleware<State> => {
     return async (ctx) => {
       const res = await ctx.next();
       res.headers.set("X-Content-Type-Options", "nosniff");
       res.headers.set("Referrer-Policy", "no-referrer");
       res.headers.set("Permissions-Policy", "geolocation=()");
+      // Clickjacking protection (configurable via env.ts if needed)
+      res.headers.set("X-Frame-Options", options.frameOptions ?? "DENY");
+
+      // Cross-origin isolation knobs (disabled by default; enable via config)
+      if (options.enableCorp) {
+        res.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+      }
+      if (options.enableCoop) {
+        res.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+      }
+      if (options.enableCoep) {
+        res.headers.set("Cross-Origin-Embedder-Policy", "require-corp");
+      }
+
+      // HSTS in production only
+      if (options.hstsEnabled && config.app.environment === "production") {
+        const maxAge = options.hstsMaxAge ?? 31536000; // 1 year
+        const includeSub = options.hstsIncludeSubDomains
+          ? "; includeSubDomains"
+          : "";
+        const preload = options.hstsPreload ? "; preload" : "";
+        res.headers.set(
+          "Strict-Transport-Security",
+          `max-age=${maxAge}${includeSub}${preload}`,
+        );
+      }
 
       if (
         options.enableCSP &&
@@ -44,14 +102,16 @@ export const middlewares = {
       ) {
         res.headers.set(
           "Content-Security-Policy",
-          "default-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline'",
+          "default-src 'self'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
         );
       }
       return res;
     };
   },
 
-  rateLimit: (options = config.security): Middleware<State> => {
+  rateLimit: (
+    options: RateLimitOptions = config.security as SecurityOptions,
+  ): Middleware<State> => {
     const buckets = new Map<string, { tokens: number; updated: number }>();
     const CAP = options.rateLimitMax;
     const WINDOW_MS = options.rateLimitWindowMs;
@@ -77,6 +137,14 @@ export const middlewares = {
 
       bucket.tokens -= 1;
       buckets.set(key, bucket);
+
+      // Periodic pruning to avoid unbounded memory
+      if (buckets.size % 50 === 0) {
+        const ttl = WINDOW_MS * 10;
+        for (const [k, b] of buckets) {
+          if (now - b.updated > ttl) buckets.delete(k);
+        }
+      }
       return ctx.next();
     };
   },

@@ -16,7 +16,7 @@ COPY . .
 # Cache runtime dependencies after build files exist
 RUN deno task build && \
     deno cache _fresh/server.js && \
-    deno install --allow-scripts=npm:@tailwindcss/oxide@4.1.12 --node-modules-dir=auto
+    deno install --allow-scripts=npm:@tailwindcss/oxide@4.1.10 --node-modules-dir=auto
 
 # Production stage
 FROM denoland/deno:2.4.5

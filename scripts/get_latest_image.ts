@@ -41,7 +41,10 @@ async function listTags(
   return tags;
 }
 
-async function fetchJson(url: string, init?: RequestInit): Promise<unknown | null> {
+async function fetchJson(
+  url: string,
+  init?: RequestInit,
+): Promise<unknown | null> {
   const res = await fetch(url, init);
   if (!res.ok) return null;
   try {
@@ -76,23 +79,23 @@ async function resolveConfigDigestFromManifest(
   man: unknown,
 ): Promise<string | null> {
   const mediaType = (man && typeof man === "object" && "mediaType" in man)
-    ? // deno-lint-ignore no-explicit-any
-      String((man as any).mediaType ?? "")
+    // deno-lint-ignore no-explicit-any
+    ? String((man as any).mediaType ?? "")
     : "";
   if (
     mediaType.includes("manifest.v2+json") ||
     mediaType.includes("image.manifest.v1+json")
   ) {
     const cfg = (man && typeof man === "object" && "config" in man)
-      ? // deno-lint-ignore no-explicit-any
-        (man as any).config
+      // deno-lint-ignore no-explicit-any
+      ? (man as any).config
       : undefined;
     return typeof cfg?.digest === "string" ? cfg.digest : null;
   }
   // Assume index/list: pick the desired platform manifest digest
   const manifests = (man && typeof man === "object" && "manifests" in man)
-    ? // deno-lint-ignore no-explicit-any
-      (Array.isArray((man as any).manifests) ? (man as any).manifests : [])
+    // deno-lint-ignore no-explicit-any
+    ? (Array.isArray((man as any).manifests) ? (man as any).manifests : [])
     : [];
   const preferred = manifests.find((x) =>
     x && typeof x === "object" &&

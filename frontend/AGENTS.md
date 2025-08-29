@@ -253,3 +253,108 @@ Defaults are applied via schema parsing; unset values fall back safely.
 - Keep secrets in real environment; avoid committing `.env` files.
 - When changing schema or keys, run `deno fmt && deno lint && deno check` and
   update any tests that rely on env.
+
+## Environment Variables (Fresh + Deno)
+
+Use server-only environment variables for configuration and secrets. Prefer the
+centralized `frontend/env.ts` helpers and avoid ad‑hoc `Deno.env.get()`
+scattered across the codebase.
+
+### Core rules
+
+- Server-only: never read env vars in islands or client bundles.
+- Centralize: import `env`/`config` from `env.ts` in server code (routes,
+  middleware, `main.ts`).
+- Permissions: reading env requires `--allow-env` (our tasks already include
+  `-A`). Tests that touch env must include `--allow-env`.
+- Serialization: do not pass secrets through page `props`. If a page needs a
+  non-secret value, compute it in the handler and pass only what’s necessary.
+
+### Reading env in Deno
+
+```ts
+// server-only code
+const port = Number(Deno.env.get("PORT") ?? "8000");
+const isProd = (Deno.env.get("APP_ENV") ?? "development") === "production";
+```
+
+Prefer our validated helpers:
+
+```ts
+// frontend/env.ts already exports these
+import { config, env } from "./env.ts";
+const port = Number(env.PORT);
+const { logLevel } = config.server;
+```
+
+Available Deno APIs:
+
+- `Deno.env.get(name)`: returns `string | undefined`.
+- `Deno.env.has(name)`: boolean existence check.
+- `Deno.env.set(name, value)`: mutate for current process (tests/dev only).
+- `Deno.env.toObject()`: snapshot of current environment.
+
+All access needs `--allow-env` (or `-A`).
+
+### Supplying env values
+
+- Shell inline for one command:
+  - macOS/Linux: `PORT=8000 deno task dev`
+  - Windows (PowerShell): `$Env:PORT=8000; deno task dev`
+- `.env` files in development (two supported approaches):
+  - CLI: `deno run --allow-env --env-file=.env dev.ts` (or add to the `dev`
+    task).
+  - Std dotenv: `import "jsr:@std/dotenv/load";` at the top of `dev.ts` or
+    `env.ts` (dev-only) to load `.env` before reading `Deno.env`.
+- Tasks can set env inline, as shown in `frontend/deno.json`:
+  - `"dev"`: `OTEL_DENO=true OTEL_SERVICE_NAME=frontend deno run -A --watch ...`
+  - `"start"`: `OTEL_DENO=true OTEL_SERVICE_NAME=frontend deno serve -A ...`
+
+### Fresh canary specifics
+
+- Access env in handlers/middleware only; islands can’t use `Deno.env`.
+- Prefer reading pre-validated values from `env.ts`/`config` in handlers, and
+  pass minimal, non-secret data to pages via `define.handlers` → `define.page`
+  props.
+- `ctx.state` is per-request and server-side; do not store secrets there if any
+  downstream code serializes data into props.
+
+### Testing & CI
+
+- Grant permissions when tests require env: `deno test --allow-env` (already
+  included in `frontend/deno.json`).
+- In tests, you can set values temporarily:
+
+```ts
+// example_test.ts
+import { assertEquals } from "jsr:@std/assert";
+
+Deno.test("respects PORT env", () => {
+  const original = Deno.env.get("PORT");
+  try {
+    Deno.env.set("PORT", "9000");
+    // call code that reads env
+    assertEquals(Deno.env.get("PORT"), "9000");
+  } finally {
+    if (original === undefined) {
+      // optionally clear or leave unset
+    } else {
+      Deno.env.set("PORT", original);
+    }
+  }
+});
+```
+
+### Deployment notes
+
+- Kubernetes: set env keys on the `Deployment` spec; avoid mounting secrets into
+  the client. See `k8s/AGENTS.md` for patterns.
+- Deno Deploy/other platforms: set env via the platform UI/CLI. Do not bake
+  secrets into images or the repo.
+
+### Common pitfalls
+
+- Using env in islands or shared code that bundles to the client.
+- Treating env values as non-strings without parsing/validation.
+- Forgetting `--allow-env` in ad-hoc commands/tests.
+- Passing secrets through page props or JSON responses.

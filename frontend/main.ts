@@ -1,6 +1,6 @@
 import { App, staticFiles } from "fresh";
 import { define, type State } from "./utils.ts";
-import { trace } from "npm:@opentelemetry/api@1";
+import { trace } from "npm:@opentelemetry/api@1.9.0";
 import { observe, renderProm } from "./utils/metrics.ts";
 import { createMiddlewareStack, middlewares } from "./middleware/index.ts";
 

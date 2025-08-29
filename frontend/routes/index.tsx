@@ -26,7 +26,7 @@ export default define.page(function Home(ctx) {
           Try updating this message in the
           <code class="mx-2">./routes/index.tsx</code> file, and refresh.
         </p>
-        <Counter count={count} />
+        <Counter start={count.value} />
       </div>
     </div>
   );
