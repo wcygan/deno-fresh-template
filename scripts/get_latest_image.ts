@@ -17,7 +17,8 @@ function assert(ok: unknown, msg: string): asserts ok {
 }
 
 async function getAnonToken(owner: string, image: string): Promise<string> {
-  const url = `https://ghcr.io/token?service=ghcr.io&scope=repository:${owner}/${image}:pull`;
+  const url =
+    `https://ghcr.io/token?service=ghcr.io&scope=repository:${owner}/${image}:pull`;
   const res = await fetch(url);
   assert(res.ok, `Token error: ${res.status}`);
   const data = await res.json();
@@ -25,9 +26,15 @@ async function getAnonToken(owner: string, image: string): Promise<string> {
   return data.token as string;
 }
 
-async function listTags(owner: string, image: string, token: string): Promise<string[]> {
+async function listTags(
+  owner: string,
+  image: string,
+  token: string,
+): Promise<string[]> {
   const url = `https://ghcr.io/v2/${owner}/${image}/tags/list`;
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   assert(res.ok, `Tags error: ${res.status}`);
   const data = await res.json();
   const tags: string[] = Array.isArray(data?.tags) ? data.tags : [];
@@ -44,7 +51,12 @@ async function fetchJson(url: string, init?: RequestInit): Promise<any | null> {
   }
 }
 
-async function manifestForTag(owner: string, image: string, token: string, tag: string): Promise<any | null> {
+async function manifestForTag(
+  owner: string,
+  image: string,
+  token: string,
+  tag: string,
+): Promise<any | null> {
   const accept = [
     "application/vnd.oci.image.index.v1+json",
     "application/vnd.docker.distribution.manifest.list.v2+json",
@@ -52,35 +64,62 @@ async function manifestForTag(owner: string, image: string, token: string, tag: 
     "application/vnd.oci.image.manifest.v1+json",
   ].join(", ");
   const url = `https://ghcr.io/v2/${owner}/${image}/manifests/${tag}`;
-  return await fetchJson(url, { headers: { Authorization: `Bearer ${token}`, Accept: accept } });
+  return await fetchJson(url, {
+    headers: { Authorization: `Bearer ${token}`, Accept: accept },
+  });
 }
 
-async function resolveConfigDigestFromManifest(owner: string, image: string, token: string, man: any): Promise<string | null> {
+async function resolveConfigDigestFromManifest(
+  owner: string,
+  image: string,
+  token: string,
+  man: any,
+): Promise<string | null> {
   const mt = String(man?.mediaType ?? "");
-  if (mt.includes("manifest.v2+json") || mt.includes("image.manifest.v1+json")) {
+  if (
+    mt.includes("manifest.v2+json") || mt.includes("image.manifest.v1+json")
+  ) {
     return typeof man?.config?.digest === "string" ? man.config.digest : null;
   }
   // Assume index/list: pick the desired platform manifest digest
   const items: any[] = Array.isArray(man?.manifests) ? man.manifests : [];
-  const preferred = items.find((x) => x?.platform?.os === PLATFORM_OS && x?.platform?.architecture === PLATFORM_ARCH)
-    ?? items[0];
+  const preferred = items.find((x) =>
+    x?.platform?.os === PLATFORM_OS &&
+    x?.platform?.architecture === PLATFORM_ARCH
+  ) ??
+    items[0];
   const digest = preferred?.digest;
   if (!digest || typeof digest !== "string") return null;
 
-  const accept = "application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.manifest.v1+json";
+  const accept =
+    "application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.manifest.v1+json";
   const url = `https://ghcr.io/v2/${owner}/${image}/manifests/${digest}`;
-  const sub = await fetchJson(url, { headers: { Authorization: `Bearer ${token}`, Accept: accept } });
+  const sub = await fetchJson(url, {
+    headers: { Authorization: `Bearer ${token}`, Accept: accept },
+  });
   if (!sub) return null;
   return typeof sub?.config?.digest === "string" ? sub.config.digest : null;
 }
 
-async function createdTimestamp(owner: string, image: string, token: string, tag: string): Promise<number | null> {
+async function createdTimestamp(
+  owner: string,
+  image: string,
+  token: string,
+  tag: string,
+): Promise<number | null> {
   const man = await manifestForTag(owner, image, token, tag);
   if (!man) return null;
-  const cfgDigest = await resolveConfigDigestFromManifest(owner, image, token, man);
+  const cfgDigest = await resolveConfigDigestFromManifest(
+    owner,
+    image,
+    token,
+    man,
+  );
   if (!cfgDigest) return null;
   const cfgUrl = `https://ghcr.io/v2/${owner}/${image}/blobs/${cfgDigest}`;
-  const cfg = await fetchJson(cfgUrl, { headers: { Authorization: `Bearer ${token}` } });
+  const cfg = await fetchJson(cfgUrl, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   const created = cfg?.created;
   if (typeof created !== "string" || !created) return null;
   // Normalize fractional seconds for Date.parse
@@ -97,15 +136,25 @@ async function main() {
     Deno.exit(1);
   }
 
-  const candidates = TAG_PREFIX ? allTags.filter((t) => t.startsWith(TAG_PREFIX)) : allTags;
+  const candidates = TAG_PREFIX
+    ? allTags.filter((t) => t.startsWith(TAG_PREFIX))
+    : allTags;
   if (!candidates.length) {
     console.error("No tags matching TAG_PREFIX");
     Deno.exit(1);
   }
 
   // Score and choose newest by created timestamp
-  const scored = await Promise.all(candidates.map(async (tag) => ({ tag, ts: await createdTimestamp(OWNER, IMAGE, token, tag) })));
-  const valid = scored.filter((x) => x.ts != null).sort((a, b) => (b.ts! - a.ts!));
+  const scored = await Promise.all(
+    candidates.map(async (tag) => ({
+      tag,
+      ts: await createdTimestamp(OWNER, IMAGE, token, tag),
+    })),
+  );
+  const valid = scored.filter((x) => x.ts != null).sort((
+    a,
+    b,
+  ) => (b.ts! - a.ts!));
   const best = valid[0] ?? { tag: candidates[0], ts: null };
 
   const result = {
@@ -120,4 +169,3 @@ async function main() {
 if (import.meta.main) {
   await main();
 }
-

@@ -23,7 +23,9 @@ deno task open-local-app
 
 ## Kubernetes
 
-Run it in your Kubernetes cluster (e.g. [k3d](https://k3d.io/), [minikube](https://minikube.sigs.k8s.io/docs/), [kind](https://kind.sigs.k8s.io/), [Talos](https://www.talos.dev/)):
+Run it in your Kubernetes cluster (e.g. [k3d](https://k3d.io/),
+[minikube](https://minikube.sigs.k8s.io/docs/),
+[kind](https://kind.sigs.k8s.io/), [Talos](https://www.talos.dev/)):
 
 ```bash
 deno task k8s:deploy

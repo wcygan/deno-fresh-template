@@ -32,12 +32,18 @@ async function runCapture(cmd: string[], opts: Deno.CommandOptions = {}) {
   const out = await p;
   const stdout = new TextDecoder().decode(out.stdout).trim();
   const stderr = new TextDecoder().decode(out.stderr).trim();
-  return { code: out.code, stdout, stderr }; 
+  return { code: out.code, stdout, stderr };
 }
 
-async function getLatestImage(): Promise<{ image: string; tag: string } | null> {
+async function getLatestImage(): Promise<
+  { image: string; tag: string } | null
+> {
   try {
-    const { code, stdout, stderr } = await runCapture(["deno", "task", "image:latest"]);
+    const { code, stdout, stderr } = await runCapture([
+      "deno",
+      "task",
+      "image:latest",
+    ]);
     if (code !== 0) {
       console.error("image:latest task failed:", stderr);
       return null;
@@ -52,7 +58,9 @@ async function getLatestImage(): Promise<{ image: string; tag: string } | null> 
   return null;
 }
 
-async function getManifestImage(path = "k8s/deployment.yaml"): Promise<string | null> {
+async function getManifestImage(
+  path = "k8s/deployment.yaml",
+): Promise<string | null> {
   try {
     const text = await Deno.readTextFile(path);
     const doc = parse(text) as any;
@@ -64,7 +72,10 @@ async function getManifestImage(path = "k8s/deployment.yaml"): Promise<string | 
   }
 }
 
-async function getRunningPodsByImage(ns = "app", label = "app=fresh-app"): Promise<Record<string, number> | null> {
+async function getRunningPodsByImage(
+  ns = "app",
+  label = "app=fresh-app",
+): Promise<Record<string, number> | null> {
   try {
     const { code, stdout, stderr } = await runCapture([
       "kubectl",
@@ -103,12 +114,24 @@ function computeSync(
   manifestImage: string | null,
   runningByImage: Record<string, number> | null,
 ) {
-  const manifestMatchesLatest = !!latestImage && !!manifestImage && latestImage === manifestImage;
-  const totalRunning = runningByImage ? Object.values(runningByImage).reduce((a, b) => a + b, 0) : 0;
-  const runningLatestCount = latestImage && runningByImage ? (runningByImage[latestImage] ?? 0) : 0;
-  const allRunningLatest = totalRunning > 0 && runningLatestCount === totalRunning;
+  const manifestMatchesLatest = !!latestImage && !!manifestImage &&
+    latestImage === manifestImage;
+  const totalRunning = runningByImage
+    ? Object.values(runningByImage).reduce((a, b) => a + b, 0)
+    : 0;
+  const runningLatestCount = latestImage && runningByImage
+    ? (runningByImage[latestImage] ?? 0)
+    : 0;
+  const allRunningLatest = totalRunning > 0 &&
+    runningLatestCount === totalRunning;
   const inSync = Boolean(manifestMatchesLatest && allRunningLatest);
-  return { manifestMatchesLatest, allRunningLatest, inSync, totalRunning, runningLatestCount };
+  return {
+    manifestMatchesLatest,
+    allRunningLatest,
+    inSync,
+    totalRunning,
+    runningLatestCount,
+  };
 }
 
 async function main() {
@@ -129,4 +152,3 @@ async function main() {
 if (import.meta.main) {
   await main();
 }
-

@@ -19,4 +19,3 @@ Deno.test("metrics endpoint reports after a request", async () => {
   assert(body.includes("http_requests_total"));
   assert(body.includes("/api2/:name"));
 });
-

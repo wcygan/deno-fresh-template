@@ -1,6 +1,6 @@
 import { App, staticFiles } from "fresh";
 import { define, type State } from "./utils.ts";
-import { renderProm, observe } from "./utils/metrics.ts";
+import { observe, renderProm } from "./utils/metrics.ts";
 import { allow } from "./utils/rate_limit.ts";
 
 export const app = new App<State>();
@@ -102,24 +102,36 @@ app.use(define.middleware(async (ctx) => {
 let ready = false;
 app.get("/healthz", () => new Response("ok"));
 app.get("/livez", () => new Response("ok"));
-app.get("/readyz", () => new Response(ready ? "ready" : "not-ready", { status: ready ? 200 : 503 }));
-globalThis.addEventListener("load", () => { ready = true; });
+app.get(
+  "/readyz",
+  () =>
+    new Response(ready ? "ready" : "not-ready", { status: ready ? 200 : 503 }),
+);
+globalThis.addEventListener("load", () => {
+  ready = true;
+});
 
 // Metrics endpoint
 app.get(
   "/metrics",
-  () => new Response(renderProm(), { headers: { "content-type": "text/plain; version=0.0.4" } }),
+  () =>
+    new Response(renderProm(), {
+      headers: { "content-type": "text/plain; version=0.0.4" },
+    }),
 );
 
 // Scoped rate limiter for /api
-app.use("/api", define.middleware((ctx) => {
-  const ip = ctx.req.headers.get("x-forwarded-for") ??
-    ctx.req.headers.get("cf-connecting-ip") ??
-    "unknown";
-  const key = `${ip}:${new URL(ctx.req.url).pathname}`;
-  if (!allow(key)) return new Response("rate limited", { status: 429 });
-  return ctx.next();
-}));
+app.use(
+  "/api",
+  define.middleware((ctx) => {
+    const ip = ctx.req.headers.get("x-forwarded-for") ??
+      ctx.req.headers.get("cf-connecting-ip") ??
+      "unknown";
+    const key = `${ip}:${new URL(ctx.req.url).pathname}`;
+    if (!allow(key)) return new Response("rate limited", { status: 429 });
+    return ctx.next();
+  }),
+);
 
 // Example programmatic route used in tests (with metrics observation)
 app.get("/api2/:name", async (ctx) => {

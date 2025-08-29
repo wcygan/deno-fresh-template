@@ -2,13 +2,13 @@ name: Build and Push Frontend
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'frontend/**'
+      - "frontend/**"
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'frontend/**'
+      - "frontend/**"
 
 env:
   REGISTRY: ghcr.io

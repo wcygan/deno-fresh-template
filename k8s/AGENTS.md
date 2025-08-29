@@ -1,6 +1,8 @@
 ## Kubernetes & Skaffold (frontend)
 
-> Quick, minimal notes for agents deploying the Fresh frontend with Kubernetes and Skaffold. Mirrors the structure shown in `docs/docs/intro.md` and uses the `app` namespace.
+> Quick, minimal notes for agents deploying the Fresh frontend with Kubernetes
+> and Skaffold. Mirrors the structure shown in `docs/docs/intro.md` and uses the
+> `app` namespace.
 
 ### Prereqs
 
@@ -60,5 +62,5 @@ skaffold delete
 
 - Kubernetes: `k8s/namespace.yaml`, `k8s/deployment.yaml`, `k8s/service.yaml`
 - Skaffold: `skaffold.yaml` (at repo root)
-- App image: `ghcr.io/wcygan/deno-fresh-template/frontend` (built from `/frontend`)
-
+- App image: `ghcr.io/wcygan/deno-fresh-template/frontend` (built from
+  `/frontend`)

@@ -16,4 +16,3 @@ export function allow(key: string): boolean {
   buckets.set(key, b);
   return true;
 }
-

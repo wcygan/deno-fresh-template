@@ -18,4 +18,3 @@ portForward:
     namespace: app
     port: 80
     localPort: 8080
-

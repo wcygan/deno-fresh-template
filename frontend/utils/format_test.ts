@@ -11,9 +11,9 @@ Deno.test("formatPrice supports custom currency and locale", () => {
   // e.g., "1.234,50 €" or "1.234,50 EUR". Check it contains the number and symbol/code.
   const normalized = eur.replace(/\s/g, "");
   const hasNumber = normalized.includes("1.234,50");
-  const hasCurrency = normalized.includes("€") || normalized.toUpperCase().includes("EUR");
+  const hasCurrency = normalized.includes("€") ||
+    normalized.toUpperCase().includes("EUR");
   if (!(hasNumber && hasCurrency)) {
     throw new Error(`Unexpected EUR format: ${eur}`);
   }
 });
-
