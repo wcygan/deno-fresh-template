@@ -11,7 +11,7 @@
 // - --allow-read: read k8s/deployment.yaml
 // - --allow-net: image:latest script fetches from GHCR
 
-import { parse } from "jsr:@std/yaml@^1.0.3";
+import { parse } from "jsr:@std/yaml@1.0.3";
 
 type PodList = {
   items?: Array<{
@@ -63,8 +63,19 @@ async function getManifestImage(
 ): Promise<string | null> {
   try {
     const text = await Deno.readTextFile(path);
-    const doc = parse(text) as any;
-    const img = doc?.spec?.template?.spec?.containers?.[0]?.image;
+    const doc = parse(text) as unknown;
+    if (!doc || typeof doc !== "object") return null;
+    const spec = (doc as Record<string, unknown>).spec;
+    if (!spec || typeof spec !== "object") return null;
+    const template = (spec as Record<string, unknown>).template;
+    if (!template || typeof template !== "object") return null;
+    const tmplSpec = (template as Record<string, unknown>).spec;
+    if (!tmplSpec || typeof tmplSpec !== "object") return null;
+    const containers = (tmplSpec as Record<string, unknown>).containers;
+    if (!Array.isArray(containers) || containers.length === 0) return null;
+    const first = containers[0];
+    if (!first || typeof first !== "object") return null;
+    const img = (first as Record<string, unknown>).image;
     return typeof img === "string" ? img : null;
   } catch (e) {
     console.error("Failed to read/parse manifest:", e);

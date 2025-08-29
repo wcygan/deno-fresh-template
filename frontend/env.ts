@@ -99,7 +99,7 @@ function isObject(item: unknown): item is Record<string, unknown> {
 function deepMerge(
   target: Record<string, unknown>,
   ...sources: unknown[]
-): any {
+): Record<string, unknown> {
   if (!sources.length) return target;
   const source = sources.shift();
   if (isObject(target) && isObject(source)) {

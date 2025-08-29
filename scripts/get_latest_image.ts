@@ -41,7 +41,7 @@ async function listTags(
   return tags;
 }
 
-async function fetchJson(url: string, init?: RequestInit): Promise<any | null> {
+async function fetchJson(url: string, init?: RequestInit): Promise<unknown | null> {
   const res = await fetch(url, init);
   if (!res.ok) return null;
   try {
@@ -56,7 +56,7 @@ async function manifestForTag(
   image: string,
   token: string,
   tag: string,
-): Promise<any | null> {
+): Promise<unknown | null> {
   const accept = [
     "application/vnd.oci.image.index.v1+json",
     "application/vnd.docker.distribution.manifest.list.v2+json",
@@ -73,22 +73,38 @@ async function resolveConfigDigestFromManifest(
   owner: string,
   image: string,
   token: string,
-  man: any,
+  man: unknown,
 ): Promise<string | null> {
-  const mt = String(man?.mediaType ?? "");
+  const mediaType = (man && typeof man === "object" && "mediaType" in man)
+    ? // deno-lint-ignore no-explicit-any
+      String((man as any).mediaType ?? "")
+    : "";
   if (
-    mt.includes("manifest.v2+json") || mt.includes("image.manifest.v1+json")
+    mediaType.includes("manifest.v2+json") ||
+    mediaType.includes("image.manifest.v1+json")
   ) {
-    return typeof man?.config?.digest === "string" ? man.config.digest : null;
+    const cfg = (man && typeof man === "object" && "config" in man)
+      ? // deno-lint-ignore no-explicit-any
+        (man as any).config
+      : undefined;
+    return typeof cfg?.digest === "string" ? cfg.digest : null;
   }
   // Assume index/list: pick the desired platform manifest digest
-  const items: any[] = Array.isArray(man?.manifests) ? man.manifests : [];
-  const preferred = items.find((x) =>
-    x?.platform?.os === PLATFORM_OS &&
-    x?.platform?.architecture === PLATFORM_ARCH
-  ) ??
-    items[0];
-  const digest = preferred?.digest;
+  const manifests = (man && typeof man === "object" && "manifests" in man)
+    ? // deno-lint-ignore no-explicit-any
+      (Array.isArray((man as any).manifests) ? (man as any).manifests : [])
+    : [];
+  const preferred = manifests.find((x) =>
+    x && typeof x === "object" &&
+    // deno-lint-ignore no-explicit-any
+    (x as any)?.platform?.os === PLATFORM_OS &&
+    // deno-lint-ignore no-explicit-any
+    (x as any)?.platform?.architecture === PLATFORM_ARCH
+  ) ?? manifests[0];
+  const digest = preferred && typeof preferred === "object"
+    // deno-lint-ignore no-explicit-any
+    ? (preferred as any).digest
+    : undefined;
   if (!digest || typeof digest !== "string") return null;
 
   const accept =

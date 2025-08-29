@@ -1,15 +1,17 @@
 import { assertEquals, assertRejects } from "jsr:@std/assert";
 import { middlewares } from "../middleware/index.ts";
+import { type Context } from "fresh";
+import { type State } from "../utils.ts";
 
 Deno.test("errorHandler returns problem+json on unexpected error", async () => {
   const mw = middlewares.errorHandler();
-  const ctx: any = {
-    state: { requestId: "req-1" },
+  const ctx = {
+    state: { requestId: "req-1", shared: "", start: 0 },
     req: new Request("http://x/test"),
     next: () => {
       throw new Error("boom");
     },
-  };
+  } as unknown as Context<State>;
   const res = await mw(ctx);
   assertEquals(res.status, 500);
   assertEquals(res.headers.get("content-type"), "application/problem+json");
@@ -20,15 +22,15 @@ Deno.test("errorHandler returns problem+json on unexpected error", async () => {
 
 Deno.test("errorHandler rethrows known http errors", async () => {
   const mw = middlewares.errorHandler();
-  const ctx: any = {
-    state: { requestId: "req-2" },
+  const ctx = {
+    state: { requestId: "req-2", shared: "", start: 0 },
     req: new Request("http://x/test"),
     next: () => {
-      const e: any = new Error("not found");
+      const e = new Error("not found") as Error & { status?: number };
       e.status = 404;
       throw e;
     },
-  };
+  } as unknown as Context<State>;
   await assertRejects(async () => {
     await mw(ctx);
   });
