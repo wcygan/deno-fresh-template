@@ -141,6 +141,7 @@ if (import.meta.main) {
 }
 `;
   await Deno.writeTextFile(outPath, template);
+  await Deno.chmod(outPath, 0o755)
   console.log(`Created ${outPath}`);
 }
 
